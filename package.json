@@ -1,0 +1,56 @@
+{
+  "name": "mcp-spring-boot-actuator",
+  "version": "0.1.0",
+  "description": "MCP server for Spring Boot Actuator analysis — health, metrics, environment, and bean diagnostics",
+  "main": "build/index.js",
+  "bin": {
+    "mcp-spring-boot-actuator": "build/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc && chmod 755 build/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "files": [
+    "build/**/*.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "spring-boot",
+    "actuator",
+    "health",
+    "metrics",
+    "java",
+    "monitoring",
+    "diagnostics",
+    "ai",
+    "claude"
+  ],
+  "author": "Dmytro Lisnichenko",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dmitriusan/mcp-spring-boot-actuator"
+  },
+  "homepage": "https://github.com/Dmitriusan/mcp-spring-boot-actuator#readme",
+  "bugs": {
+    "url": "https://github.com/Dmitriusan/mcp-spring-boot-actuator/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.2",
+    "vitest": "^4.0.18"
+  }
+}
