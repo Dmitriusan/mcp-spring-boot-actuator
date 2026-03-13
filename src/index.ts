@@ -22,6 +22,7 @@ import { analyzeStartup } from "./analyzers/startup.js";
 import { analyzeCaches } from "./analyzers/caches.js";
 import { analyzeLoggers } from "./analyzers/loggers.js";
 import { validateLicense, formatUpgradePrompt } from "./license.js";
+import { formatSeveritySummary } from "./format.js";
 
 // License check (reads MCP_LICENSE_KEY env var once at startup)
 const license = validateLicense(process.env.MCP_LICENSE_KEY, "spring-boot-actuator");
@@ -90,6 +91,8 @@ server.tool(
       }
     }
 
+    output += formatSeveritySummary(report.issues);
+
     return { content: [{ type: "text" as const, text: output }] };
   }
 );
@@ -144,6 +147,8 @@ server.tool(
       output += "No recognized metrics found. Provide metrics in the format: `{\"jvm.memory.used\": 1234567, ...}`\n";
     }
 
+    output += formatSeveritySummary(report.issues);
+
     return { content: [{ type: "text" as const, text: output }] };
   }
 );
@@ -184,6 +189,8 @@ server.tool(
         output += `- ${rec}\n`;
       }
     }
+
+    output += formatSeveritySummary(report.risks);
 
     return { content: [{ type: "text" as const, text: output }] };
   }
@@ -238,6 +245,8 @@ server.tool(
         output += `- ${rec}\n`;
       }
     }
+
+    output += formatSeveritySummary(report.issues);
 
     return { content: [{ type: "text" as const, text: output }] };
   }
@@ -295,6 +304,8 @@ server.tool(
       }
     }
 
+    output += formatSeveritySummary(report.issues);
+
     return { content: [{ type: "text" as const, text: output }] };
   }
 );
@@ -348,6 +359,8 @@ server.tool(
       }
     }
 
+    output += formatSeveritySummary(report.issues);
+
     return { content: [{ type: "text" as const, text: output }] };
   }
 );
@@ -389,6 +402,8 @@ server.tool(
           output += `- ${rec}\n`;
         }
       }
+
+      output += formatSeveritySummary(report.issues);
 
       return { content: [{ type: "text" as const, text: output }] };
     } catch (err) {
