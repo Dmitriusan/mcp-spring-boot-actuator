@@ -21,11 +21,7 @@ import { analyzeBeans } from "./analyzers/beans.js";
 import { analyzeStartup } from "./analyzers/startup.js";
 import { analyzeCaches } from "./analyzers/caches.js";
 import { analyzeLoggers } from "./analyzers/loggers.js";
-import { validateLicense, formatUpgradePrompt } from "./license.js";
 import { formatSeveritySummary } from "./format.js";
-
-// License check (reads MCP_LICENSE_KEY env var once at startup)
-const license = validateLicense(process.env.MCP_LICENSE_KEY, "spring-boot-actuator");
 
 // Handle --help
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
@@ -204,19 +200,6 @@ server.tool(
     json: z.string().describe("JSON response from the /beans endpoint (curl http://localhost:8080/actuator/beans)"),
   },
   async ({ json }) => {
-    if (!license.isPro) {
-      return {
-        content: [{
-          type: "text" as const,
-          text: formatUpgradePrompt("analyze_beans",
-            "Bean architecture analysis with:\n" +
-            "- Circular dependency detection\n" +
-            "- Scope mismatch identification\n" +
-            "- Bean dependency graph analysis\n" +
-            "- Context hierarchy issues"),
-        }],
-      };
-    }
     const report = analyzeBeans(json);
 
     let output = `## Bean Analysis\n\n`;
@@ -260,19 +243,6 @@ server.tool(
     json: z.string().describe("JSON response from the /startup endpoint (curl http://localhost:8080/actuator/startup)"),
   },
   async ({ json }) => {
-    if (!license.isPro) {
-      return {
-        content: [{
-          type: "text" as const,
-          text: formatUpgradePrompt("analyze_startup",
-            "Startup performance analysis with:\n" +
-            "- Slow bean initialization detection\n" +
-            "- Heavy auto-configuration identification\n" +
-            "- Startup bottleneck analysis\n" +
-            "- Bean init time ranking"),
-        }],
-      };
-    }
     const report = analyzeStartup(json);
 
     let output = `## Startup Analysis\n\n`;
@@ -318,19 +288,6 @@ server.tool(
     json: z.string().describe("JSON response from the /caches endpoint (curl http://localhost:8080/actuator/caches)"),
   },
   async ({ json }) => {
-    if (!license.isPro) {
-      return {
-        content: [{
-          type: "text" as const,
-          text: formatUpgradePrompt("analyze_caches",
-            "Cache health analysis with:\n" +
-            "- Unbounded cache detection (memory leak risk)\n" +
-            "- Cache configuration audit\n" +
-            "- Cache manager inventory\n" +
-            "- Optimization recommendations"),
-        }],
-      };
-    }
     const report = analyzeCaches(json);
 
     let output = `## Cache Analysis\n\n`;
