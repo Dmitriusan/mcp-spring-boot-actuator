@@ -29,7 +29,7 @@ const license = validateLicense(process.env.MCP_LICENSE_KEY, "spring-boot-actuat
 
 // Handle --help
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
-  console.log(`mcp-spring-boot-actuator v0.1.0 — MCP server for Spring Boot Actuator diagnostics
+  console.log(`mcp-spring-boot-actuator v0.1.1 — MCP server for Spring Boot Actuator diagnostics
 
 Usage:
   mcp-spring-boot-actuator [options]
