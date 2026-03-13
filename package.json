@@ -1,6 +1,6 @@
 {
   "name": "mcp-spring-boot-actuator",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server for Spring Boot Actuator analysis — health, metrics, environment, and bean diagnostics",
   "main": "build/index.js",
   "bin": {
@@ -20,16 +20,19 @@
   ],
   "keywords": [
     "mcp",
+    "mcp-server",
     "model-context-protocol",
-    "spring-boot",
-    "actuator",
-    "health",
-    "metrics",
-    "java",
-    "monitoring",
-    "diagnostics",
     "ai",
-    "claude"
+    "claude",
+    "anthropic",
+    "spring-boot",
+    "spring",
+    "actuator",
+    "java",
+    "health-check",
+    "metrics",
+    "monitoring",
+    "diagnostics"
   ],
   "author": "Dmytro Lisnichenko",
   "license": "MIT",
