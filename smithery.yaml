@@ -1,0 +1,35 @@
+name: mcp-spring-boot-actuator
+displayName: Spring Boot Actuator
+description: MCP server for Spring Boot Actuator analysis — health, metrics, environment, and bean diagnostics
+version: 0.1.3
+license: MIT
+homepage: https://github.com/Dmitriusan/mcp-spring-boot-actuator
+npm: mcp-spring-boot-actuator
+categories:
+  - developer-tools
+  - monitoring
+  - java
+keywords:
+  - spring-boot
+  - actuator
+  - java
+  - health-check
+  - metrics
+  - diagnostics
+tools:
+  - name: analyze_health
+    description: Detect unhealthy components and disk space warnings from /actuator/health
+  - name: analyze_metrics
+    description: Inspect JVM memory, error rates, and GC pressure from /actuator/metrics
+  - name: analyze_env
+    description: Surface exposed secrets and risky configuration values from /actuator/env
+  - name: analyze_beans
+    description: Find circular dependencies and prototype-scope issues from /actuator/beans
+  - name: analyze_startup
+    description: Identify slow bean initialization and heavy auto-configurations from /actuator/startup
+  - name: analyze_caches
+    description: Detect unbounded caches and memory leak patterns from /actuator/caches
+  - name: analyze_loggers
+    description: Flag DEBUG/TRACE loggers active in production from /actuator/loggers
+transport:
+  - stdio
