@@ -57,39 +57,48 @@ server.tool(
     json: z.string().describe("JSON response from the /health endpoint (curl http://localhost:8080/actuator/health)"),
   },
   async ({ json }) => {
-    const report = parseHealth(json);
+    try {
+      const report = parseHealth(json);
 
-    let output = `## Health Analysis\n\n`;
-    output += `**Overall Status**: ${report.overallStatus}\n`;
-    output += `**Components**: ${report.components.length}\n\n`;
+      let output = `## Health Analysis\n\n`;
+      output += `**Overall Status**: ${report.overallStatus}\n`;
+      output += `**Components**: ${report.components.length}\n\n`;
 
-    if (report.components.length > 0) {
-      output += "### Component Status\n\n";
-      output += "| Component | Status | Details |\n|-----------|--------|--------|\n";
-      for (const comp of report.components) {
-        const details = Object.entries(comp.details).slice(0, 3).map(([k, v]) => `${k}=${v}`).join(", ");
-        output += `| ${comp.name} | ${comp.status} | ${details || "-"} |\n`;
+      if (report.components.length > 0) {
+        output += "### Component Status\n\n";
+        output += "| Component | Status | Details |\n|-----------|--------|--------|\n";
+        for (const comp of report.components) {
+          const details = Object.entries(comp.details).slice(0, 3).map(([k, v]) => `${k}=${v}`).join(", ");
+          output += `| ${comp.name} | ${comp.status} | ${details || "-"} |\n`;
+        }
+        output += "\n";
       }
-      output += "\n";
-    }
 
-    if (report.issues.length > 0) {
-      output += "### Issues\n\n";
-      for (const issue of report.issues) {
-        output += `**${issue.severity}** [${issue.component}]: ${issue.message}\n\n`;
+      if (report.issues.length > 0) {
+        output += "### Issues\n\n";
+        for (const issue of report.issues) {
+          output += `**${issue.severity}** [${issue.component}]: ${issue.message}\n\n`;
+        }
       }
-    }
 
-    if (report.recommendations.length > 0) {
-      output += "### Recommendations\n\n";
-      for (const rec of report.recommendations) {
-        output += `- ${rec}\n`;
+      if (report.recommendations.length > 0) {
+        output += "### Recommendations\n\n";
+        for (const rec of report.recommendations) {
+          output += `- ${rec}\n`;
+        }
       }
+
+      output += formatSeveritySummary(report.issues);
+
+      return { content: [{ type: "text" as const, text: output }] };
+    } catch (err) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Error analyzing health data: ${err instanceof Error ? err.message : String(err)}`,
+        }],
+      };
     }
-
-    output += formatSeveritySummary(report.issues);
-
-    return { content: [{ type: "text" as const, text: output }] };
   }
 );
 
@@ -101,51 +110,60 @@ server.tool(
     json: z.string().describe("JSON object with metric names as keys and values (e.g., from /metrics endpoints)"),
   },
   async ({ json }) => {
-    const report = analyzeMetrics(json);
+    try {
+      const report = analyzeMetrics(json);
 
-    let output = `## Metrics Analysis\n\n`;
+      let output = `## Metrics Analysis\n\n`;
 
-    if (report.jvm) {
-      output += "### JVM\n\n";
-      output += `| Metric | Value |\n|--------|-------|\n`;
-      output += `| Heap Used | ${formatBytes(report.jvm.heapUsed)} |\n`;
-      output += `| Heap Max | ${formatBytes(report.jvm.heapMax)} |\n`;
-      output += `| Heap Utilization | ${(report.jvm.heapUtilization * 100).toFixed(1)}% |\n`;
-      output += `| Thread Count | ${report.jvm.threadCount} |\n`;
-      output += `| Thread Peak | ${report.jvm.threadPeak} |\n`;
-      output += `| GC Pauses | ${report.jvm.gcPauseCount} (${report.jvm.gcPauseTotal.toFixed(1)}s total) |\n`;
-      output += `| Loaded Classes | ${report.jvm.loadedClasses} |\n\n`;
-    }
-
-    if (report.http) {
-      output += "### HTTP\n\n";
-      output += `| Metric | Value |\n|--------|-------|\n`;
-      output += `| Total Requests | ${report.http.totalRequests} |\n`;
-      output += `| Error Rate | ${(report.http.errorRate * 100).toFixed(1)}% |\n`;
-      output += `| Max Latency | ${report.http.maxLatency}ms |\n\n`;
-    }
-
-    if (report.issues.length > 0) {
-      output += "### Issues\n\n";
-      for (const issue of report.issues) {
-        output += `**${issue.severity}** [${issue.category}]: ${issue.message}\n\n`;
+      if (report.jvm) {
+        output += "### JVM\n\n";
+        output += `| Metric | Value |\n|--------|-------|\n`;
+        output += `| Heap Used | ${formatBytes(report.jvm.heapUsed)} |\n`;
+        output += `| Heap Max | ${formatBytes(report.jvm.heapMax)} |\n`;
+        output += `| Heap Utilization | ${(report.jvm.heapUtilization * 100).toFixed(1)}% |\n`;
+        output += `| Thread Count | ${report.jvm.threadCount} |\n`;
+        output += `| Thread Peak | ${report.jvm.threadPeak} |\n`;
+        output += `| GC Pauses | ${report.jvm.gcPauseCount} (${report.jvm.gcPauseTotal.toFixed(1)}s total) |\n`;
+        output += `| Loaded Classes | ${report.jvm.loadedClasses} |\n\n`;
       }
-    }
 
-    if (report.recommendations.length > 0) {
-      output += "### Recommendations\n\n";
-      for (const rec of report.recommendations) {
-        output += `- ${rec}\n`;
+      if (report.http) {
+        output += "### HTTP\n\n";
+        output += `| Metric | Value |\n|--------|-------|\n`;
+        output += `| Total Requests | ${report.http.totalRequests} |\n`;
+        output += `| Error Rate | ${(report.http.errorRate * 100).toFixed(1)}% |\n`;
+        output += `| Max Latency | ${report.http.maxLatency}ms |\n\n`;
       }
+
+      if (report.issues.length > 0) {
+        output += "### Issues\n\n";
+        for (const issue of report.issues) {
+          output += `**${issue.severity}** [${issue.category}]: ${issue.message}\n\n`;
+        }
+      }
+
+      if (report.recommendations.length > 0) {
+        output += "### Recommendations\n\n";
+        for (const rec of report.recommendations) {
+          output += `- ${rec}\n`;
+        }
+      }
+
+      if (!report.jvm && !report.http && report.issues.length === 0) {
+        output += "No recognized metrics found. Provide metrics in the format: `{\"jvm.memory.used\": 1234567, ...}`\n";
+      }
+
+      output += formatSeveritySummary(report.issues);
+
+      return { content: [{ type: "text" as const, text: output }] };
+    } catch (err) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Error analyzing metrics data: ${err instanceof Error ? err.message : String(err)}`,
+        }],
+      };
     }
-
-    if (!report.jvm && !report.http && report.issues.length === 0) {
-      output += "No recognized metrics found. Provide metrics in the format: `{\"jvm.memory.used\": 1234567, ...}`\n";
-    }
-
-    output += formatSeveritySummary(report.issues);
-
-    return { content: [{ type: "text" as const, text: output }] };
   }
 );
 
@@ -157,38 +175,47 @@ server.tool(
     json: z.string().describe("JSON response from the /env endpoint (curl http://localhost:8080/actuator/env)"),
   },
   async ({ json }) => {
-    const report = analyzeEnv(json);
+    try {
+      const report = analyzeEnv(json);
 
-    let output = `## Environment Analysis\n\n`;
-    output += `**Active Profiles**: ${report.activeProfiles.length > 0 ? report.activeProfiles.join(", ") : "none"}\n`;
-    output += `**Property Sources**: ${report.propertySources.length}\n\n`;
+      let output = `## Environment Analysis\n\n`;
+      output += `**Active Profiles**: ${report.activeProfiles.length > 0 ? report.activeProfiles.join(", ") : "none"}\n`;
+      output += `**Property Sources**: ${report.propertySources.length}\n\n`;
 
-    if (report.risks.length > 0) {
-      output += "### Risks\n\n";
-      const critical = report.risks.filter(r => r.severity === "CRITICAL");
-      const warning = report.risks.filter(r => r.severity === "WARNING");
-      const info = report.risks.filter(r => r.severity === "INFO");
+      if (report.risks.length > 0) {
+        output += "### Risks\n\n";
+        const critical = report.risks.filter(r => r.severity === "CRITICAL");
+        const warning = report.risks.filter(r => r.severity === "WARNING");
+        const info = report.risks.filter(r => r.severity === "INFO");
 
-      for (const group of [critical, warning, info]) {
-        for (const risk of group) {
-          output += `**${risk.severity}** \`${risk.property}\`: ${risk.message}\n`;
-          output += `> ${risk.recommendation}\n\n`;
+        for (const group of [critical, warning, info]) {
+          for (const risk of group) {
+            output += `**${risk.severity}** \`${risk.property}\`: ${risk.message}\n`;
+            output += `> ${risk.recommendation}\n\n`;
+          }
+        }
+      } else {
+        output += "### No risks detected.\n\n";
+      }
+
+      if (report.recommendations.length > 0) {
+        output += "### Recommendations\n\n";
+        for (const rec of report.recommendations) {
+          output += `- ${rec}\n`;
         }
       }
-    } else {
-      output += "### No risks detected.\n\n";
+
+      output += formatSeveritySummary(report.risks);
+
+      return { content: [{ type: "text" as const, text: output }] };
+    } catch (err) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Error analyzing environment data: ${err instanceof Error ? err.message : String(err)}`,
+        }],
+      };
     }
-
-    if (report.recommendations.length > 0) {
-      output += "### Recommendations\n\n";
-      for (const rec of report.recommendations) {
-        output += `- ${rec}\n`;
-      }
-    }
-
-    output += formatSeveritySummary(report.risks);
-
-    return { content: [{ type: "text" as const, text: output }] };
   }
 );
 
@@ -200,38 +227,47 @@ server.tool(
     json: z.string().describe("JSON response from the /beans endpoint (curl http://localhost:8080/actuator/beans)"),
   },
   async ({ json }) => {
-    const report = analyzeBeans(json);
+    try {
+      const report = analyzeBeans(json);
 
-    let output = `## Bean Analysis\n\n`;
-    output += `**Total Beans**: ${report.totalBeans}\n`;
-    if (report.contexts.length > 0) {
-      output += `**Contexts**: ${report.contexts.join(", ")}\n`;
-    }
-    output += "\n";
+      let output = `## Bean Analysis\n\n`;
+      output += `**Total Beans**: ${report.totalBeans}\n`;
+      if (report.contexts.length > 0) {
+        output += `**Contexts**: ${report.contexts.join(", ")}\n`;
+      }
+      output += "\n";
 
-    if (report.issues.length > 0) {
-      output += "### Issues\n\n";
-      for (const issue of report.issues) {
-        output += `**${issue.severity}**: ${issue.message}\n`;
-        if (issue.beans.length > 0) {
-          output += `> Beans: ${issue.beans.join(", ")}\n`;
+      if (report.issues.length > 0) {
+        output += "### Issues\n\n";
+        for (const issue of report.issues) {
+          output += `**${issue.severity}**: ${issue.message}\n`;
+          if (issue.beans.length > 0) {
+            output += `> Beans: ${issue.beans.join(", ")}\n`;
+          }
+          output += "\n";
         }
-        output += "\n";
+      } else {
+        output += "### No issues detected.\n\n";
       }
-    } else {
-      output += "### No issues detected.\n\n";
-    }
 
-    if (report.recommendations.length > 0) {
-      output += "### Recommendations\n\n";
-      for (const rec of report.recommendations) {
-        output += `- ${rec}\n`;
+      if (report.recommendations.length > 0) {
+        output += "### Recommendations\n\n";
+        for (const rec of report.recommendations) {
+          output += `- ${rec}\n`;
+        }
       }
+
+      output += formatSeveritySummary(report.issues);
+
+      return { content: [{ type: "text" as const, text: output }] };
+    } catch (err) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Error analyzing beans data: ${err instanceof Error ? err.message : String(err)}`,
+        }],
+      };
     }
-
-    output += formatSeveritySummary(report.issues);
-
-    return { content: [{ type: "text" as const, text: output }] };
   }
 );
 
@@ -243,40 +279,49 @@ server.tool(
     json: z.string().describe("JSON response from the /startup endpoint (curl http://localhost:8080/actuator/startup)"),
   },
   async ({ json }) => {
-    const report = analyzeStartup(json);
+    try {
+      const report = analyzeStartup(json);
 
-    let output = `## Startup Analysis\n\n`;
-    output += `**Total Startup Time**: ${(report.totalDurationMs / 1000).toFixed(1)}s\n`;
-    output += `**Startup Steps**: ${report.steps.length}\n`;
-    output += `**Slow Steps**: ${report.slowSteps.length}\n\n`;
+      let output = `## Startup Analysis\n\n`;
+      output += `**Total Startup Time**: ${(report.totalDurationMs / 1000).toFixed(1)}s\n`;
+      output += `**Startup Steps**: ${report.steps.length}\n`;
+      output += `**Slow Steps**: ${report.slowSteps.length}\n\n`;
 
-    if (report.slowSteps.length > 0) {
-      output += "### Slowest Steps\n\n";
-      output += "| Step | Duration | Bean |\n|------|----------|------|\n";
-      for (const step of report.slowSteps.slice(0, 15)) {
-        const bean = step.tags.beanName || "-";
-        output += `| ${step.name} | ${(step.durationMs / 1000).toFixed(2)}s | ${bean} |\n`;
+      if (report.slowSteps.length > 0) {
+        output += "### Slowest Steps\n\n";
+        output += "| Step | Duration | Bean |\n|------|----------|------|\n";
+        for (const step of report.slowSteps.slice(0, 15)) {
+          const bean = step.tags.beanName || "-";
+          output += `| ${step.name} | ${(step.durationMs / 1000).toFixed(2)}s | ${bean} |\n`;
+        }
+        output += "\n";
       }
-      output += "\n";
-    }
 
-    if (report.issues.length > 0) {
-      output += "### Issues\n\n";
-      for (const issue of report.issues) {
-        output += `**${issue.severity}**: ${issue.message}\n\n`;
+      if (report.issues.length > 0) {
+        output += "### Issues\n\n";
+        for (const issue of report.issues) {
+          output += `**${issue.severity}**: ${issue.message}\n\n`;
+        }
       }
-    }
 
-    if (report.recommendations.length > 0) {
-      output += "### Recommendations\n\n";
-      for (const rec of report.recommendations) {
-        output += `- ${rec}\n`;
+      if (report.recommendations.length > 0) {
+        output += "### Recommendations\n\n";
+        for (const rec of report.recommendations) {
+          output += `- ${rec}\n`;
+        }
       }
+
+      output += formatSeveritySummary(report.issues);
+
+      return { content: [{ type: "text" as const, text: output }] };
+    } catch (err) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Error analyzing startup data: ${err instanceof Error ? err.message : String(err)}`,
+        }],
+      };
     }
-
-    output += formatSeveritySummary(report.issues);
-
-    return { content: [{ type: "text" as const, text: output }] };
   }
 );
 
@@ -288,37 +333,46 @@ server.tool(
     json: z.string().describe("JSON response from the /caches endpoint (curl http://localhost:8080/actuator/caches)"),
   },
   async ({ json }) => {
-    const report = analyzeCaches(json);
+    try {
+      const report = analyzeCaches(json);
 
-    let output = `## Cache Analysis\n\n`;
-    output += `**Registered Caches**: ${report.caches.length}\n\n`;
+      let output = `## Cache Analysis\n\n`;
+      output += `**Registered Caches**: ${report.caches.length}\n\n`;
 
-    if (report.caches.length > 0) {
-      output += "### Cache Registry\n\n";
-      output += "| Cache | Manager | Implementation |\n|-------|---------|----------------|\n";
-      for (const cache of report.caches) {
-        output += `| ${cache.name} | ${cache.cacheManager} | ${cache.target} |\n`;
+      if (report.caches.length > 0) {
+        output += "### Cache Registry\n\n";
+        output += "| Cache | Manager | Implementation |\n|-------|---------|----------------|\n";
+        for (const cache of report.caches) {
+          output += `| ${cache.name} | ${cache.cacheManager} | ${cache.target} |\n`;
+        }
+        output += "\n";
       }
-      output += "\n";
-    }
 
-    if (report.issues.length > 0) {
-      output += "### Issues\n\n";
-      for (const issue of report.issues) {
-        output += `**${issue.severity}**${issue.cache ? ` [${issue.cache}]` : ""}: ${issue.message}\n\n`;
+      if (report.issues.length > 0) {
+        output += "### Issues\n\n";
+        for (const issue of report.issues) {
+          output += `**${issue.severity}**${issue.cache ? ` [${issue.cache}]` : ""}: ${issue.message}\n\n`;
+        }
       }
-    }
 
-    if (report.recommendations.length > 0) {
-      output += "### Recommendations\n\n";
-      for (const rec of report.recommendations) {
-        output += `- ${rec}\n`;
+      if (report.recommendations.length > 0) {
+        output += "### Recommendations\n\n";
+        for (const rec of report.recommendations) {
+          output += `- ${rec}\n`;
+        }
       }
+
+      output += formatSeveritySummary(report.issues);
+
+      return { content: [{ type: "text" as const, text: output }] };
+    } catch (err) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `Error analyzing cache data: ${err instanceof Error ? err.message : String(err)}`,
+        }],
+      };
     }
-
-    output += formatSeveritySummary(report.issues);
-
-    return { content: [{ type: "text" as const, text: output }] };
   }
 );
 
