@@ -10,9 +10,16 @@
  *   analyze_beans    — Detect circular dependencies and scope mismatches
  */
 
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf8")) as { version: string };
 
 import { parseHealth } from "./parsers/health.js";
 import { analyzeMetrics } from "./analyzers/metrics.js";
@@ -25,7 +32,7 @@ import { formatSeveritySummary } from "./format.js";
 
 // Handle --help
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
-  console.log(`mcp-spring-boot-actuator v0.1.1 — MCP server for Spring Boot Actuator diagnostics
+  console.log(`mcp-spring-boot-actuator v${pkg.version} — MCP server for Spring Boot Actuator diagnostics
 
 Usage:
   mcp-spring-boot-actuator [options]
@@ -46,7 +53,7 @@ Tools provided:
 
 const server = new McpServer({
   name: "mcp-spring-boot-actuator",
-  version: "0.1.0",
+  version: pkg.version,
 });
 
 // Tool 1: analyze_health
