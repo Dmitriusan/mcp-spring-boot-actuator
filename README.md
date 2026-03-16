@@ -199,7 +199,7 @@ This server works alongside:
 - **Custom health indicators**: The tool recognizes standard health indicator patterns. Custom health indicators with non-standard status values may not trigger specific recommendations.
 - **Cache analysis**: Supports ConcurrentMapCache, Caffeine, Redis, and EhCache. Other cache providers may show limited analysis.
 - **Non-JSON responses**: Handles HTML error pages (401, 403, 500) gracefully with "Invalid JSON" warnings, but cannot extract useful data from them.
-- **Circular dependency depth**: Detects A→B→A cycles but may miss longer chains (A→B→C→A) in complex applications.
+- **Circular dependency depth**: Detects cycles of any length, including multi-hop chains (A→B→C→A).
 
 ## License
 
