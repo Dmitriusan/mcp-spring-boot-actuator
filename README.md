@@ -184,10 +184,10 @@ Once configured, try these prompts in Claude:
 
 ## Part of the MCP Java Backend Suite
 
-This server works alongside:
-- [mcp-db-analyzer](https://www.npmjs.com/package/mcp-db-analyzer) — Database performance analysis
+- [mcp-db-analyzer](https://www.npmjs.com/package/mcp-db-analyzer) — PostgreSQL/MySQL/SQLite schema analysis
 - [mcp-jvm-diagnostics](https://www.npmjs.com/package/mcp-jvm-diagnostics) — Thread dump and GC log analysis
-- [mcp-migration-advisor](https://www.npmjs.com/package/mcp-migration-advisor) — Schema migration risk analysis
+- [mcp-redis-diagnostics](https://www.npmjs.com/package/mcp-redis-diagnostics) — Redis memory, slowlog, and client diagnostics
+- [mcp-migration-advisor](https://www.npmjs.com/package/mcp-migration-advisor) — Flyway/Liquibase migration risk analysis
 
 ## Limitations & Known Issues
 

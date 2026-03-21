@@ -1,7 +1,7 @@
 name: mcp-spring-boot-actuator
 displayName: Spring Boot Actuator
 description: Connects Claude Code and Cursor to your Spring Boot Actuator endpoints for live health checks, JVM metrics analysis, environment auditing, and bean dependency diagnostics
-version: 0.1.3
+version: 0.1.4
 license: MIT
 homepage: https://github.com/Dmitriusan/mcp-spring-boot-actuator
 npm: mcp-spring-boot-actuator

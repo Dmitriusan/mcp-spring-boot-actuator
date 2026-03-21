@@ -1,0 +1,19 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.dmitriusan/mcp-spring-boot-actuator",
+  "description": "MCP server for Spring Boot Actuator analysis — health, metrics, environment, and bean diagnostics",
+  "repository": {
+    "url": "https://github.com/Dmitriusan/mcp-spring-boot-actuator",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mcp-spring-boot-actuator",
+      "version": "0.1.4",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
