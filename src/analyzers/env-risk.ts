@@ -25,7 +25,7 @@ export interface EnvReport {
 const SECRET_PATTERNS = [
   /password/i, /secret/i, /api[._-]?key/i, /token/i,
   /credential/i, /private[._-]?key/i, /access[._-]?key/i,
-  /auth/i, /jwt/i,
+  /auth/i, /jwt/i, /client[._-]?secret/i,
 ];
 
 // Properties that should differ between dev and production
