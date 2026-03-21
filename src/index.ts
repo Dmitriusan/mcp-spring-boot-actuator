@@ -45,7 +45,7 @@ Tools provided:
   analyze_metrics  Analyze JVM, HTTP, and DB pool metrics
   analyze_env      Detect exposed secrets and risky configurations
   analyze_beans    Detect circular dependencies and scope mismatches
-  analyze_startup  Parse /startup endpoint for bean init times
+  analyze_startup  Parse /startup endpoint for bean init times (Spring Boot 2.4+)
   analyze_caches   Analyze /caches endpoint for cache health
   analyze_loggers  Detect verbose logging and misconfigurations`);
   process.exit(0);
@@ -281,7 +281,7 @@ server.tool(
 // Tool 5: analyze_startup
 server.tool(
   "analyze_startup",
-  "Analyze Spring Boot Actuator /startup endpoint (Spring Boot 3.2+). Detects slow bean initialization, heavy auto-configurations, and startup bottlenecks.",
+  "Analyze Spring Boot Actuator /startup endpoint (Spring Boot 2.4+). Detects slow bean initialization, heavy auto-configurations, and startup bottlenecks.",
   {
     json: z.string().describe("JSON response from the /startup endpoint (curl http://localhost:8080/actuator/startup)"),
   },
