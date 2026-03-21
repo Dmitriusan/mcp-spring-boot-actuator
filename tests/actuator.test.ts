@@ -155,6 +155,19 @@ describe("analyzeMetrics", () => {
     expect(report.issues.some(i => i.category === "db.pool" && i.severity === "CRITICAL")).toBe(true);
   });
 
+  it("detects slow GC pauses (avg > 200ms)", () => {
+    const json = JSON.stringify({
+      "jvm.memory.used": 400000000,
+      "jvm.memory.max": 1000000000,
+      "jvm.gc.pause.count": 30,
+      "jvm.gc.pause.total": 9,
+    });
+    const report = analyzeMetrics(json);
+    // avg pause = (9/30)*1000 = 300ms, exceeds 200ms threshold
+    expect(report.issues.some(i => i.category === "jvm.gc" && i.severity === "WARNING")).toBe(true);
+    expect(report.recommendations.some(r => r.includes("ZGC") || r.includes("G1"))).toBe(true);
+  });
+
   it("reports no issues for healthy metrics", () => {
     const json = JSON.stringify({
       "jvm.memory.used": 200000000,
@@ -277,6 +290,56 @@ describe("analyzeEnv", () => {
     });
     const report = analyzeEnv(json);
     expect(report.risks.some(r => r.message.includes("actuator endpoints"))).toBe(true);
+  });
+
+  it("flags server.error.include-stacktrace=always", () => {
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "config",
+          properties: {
+            "server.error.include-stacktrace": { value: "always" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.some(r => r.property.includes("include-stacktrace"))).toBe(true);
+    expect(report.risks.some(r => r.message.includes("Stack traces"))).toBe(true);
+  });
+
+  it("flags spring.devtools.restart.enabled=true", () => {
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "config",
+          properties: {
+            "spring.devtools.restart.enabled": { value: "true" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.some(r => r.property.includes("devtools.restart"))).toBe(true);
+    expect(report.risks.some(r => r.message.includes("DevTools"))).toBe(true);
+  });
+
+  it("detects OAuth2 client-secret exposure", () => {
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "config",
+          properties: {
+            "spring.security.oauth2.client.registration.github.client-secret": { value: "ghp_realSecretToken123" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.some(r => r.severity === "CRITICAL" && r.property.includes("client-secret"))).toBe(true);
   });
 });
 
