@@ -186,7 +186,9 @@ function detectScopeMismatches(
 
     for (const dep of bean.dependencies) {
       const depBean = beansByName.get(dep);
-      if (depBean && depBean.scope === "prototype") {
+      if (!depBean) continue;
+
+      if (depBean.scope === "prototype") {
         issues.push({
           severity: "WARNING",
           message: `Singleton '${bean.name}' depends on prototype '${dep}'. The prototype will only be injected once — it won't create new instances per use.`,
@@ -194,6 +196,15 @@ function detectScopeMismatches(
         });
         recommendations.push(
           `Inject ObjectFactory<${depBean.type}> or ObjectProvider<${depBean.type}> instead of direct injection for prototype bean '${dep}'.`
+        );
+      } else if (depBean.scope === "request" || depBean.scope === "session") {
+        issues.push({
+          severity: "WARNING",
+          message: `Singleton '${bean.name}' depends on ${depBean.scope}-scoped bean '${dep}'. This causes a scope mismatch — the ${depBean.scope} bean won't be refreshed per ${depBean.scope}.`,
+          beans: [bean.name, dep],
+        });
+        recommendations.push(
+          `Use a scoped proxy for '${dep}': annotate it with @Scope(value = "${depBean.scope}", proxyMode = ScopedProxyMode.TARGET_CLASS).`
         );
       }
     }
