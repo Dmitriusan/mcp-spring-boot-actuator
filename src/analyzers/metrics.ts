@@ -281,6 +281,18 @@ function analyzeDbPool(
       message: `${pendingConnections} threads waiting for a database connection. Pool may be undersized.`,
     });
   }
+
+  const timeouts = getMetric(metrics, "hikaricp.connections.timeout");
+  if (timeouts !== null && timeouts > 0) {
+    issues.push({
+      severity: "WARNING",
+      category: "db.pool",
+      message: `${timeouts} database connection acquisition timeout(s) recorded. Connections are not being obtained within the configured connectionTimeout.`,
+    });
+    recommendations.push(
+      "Connection acquisition timeouts indicate pool starvation. Increase spring.datasource.hikari.maximum-pool-size or reduce connectionTimeout. Check for long-running transactions holding connections."
+    );
+  }
 }
 
 function formatBytes(bytes: number): string {
