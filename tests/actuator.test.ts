@@ -47,6 +47,30 @@ describe("parseHealth", () => {
     expect(report.recommendations.some(r => r.includes("Redis"))).toBe(true);
   });
 
+  it("detects DOWN mongodb", () => {
+    const json = JSON.stringify({
+      status: "DOWN",
+      components: {
+        mongo: { status: "DOWN", details: { error: "Connection refused: localhost/127.0.0.1:27017" } },
+      },
+    });
+    const report = parseHealth(json);
+    expect(report.issues.some(i => i.component === "mongo")).toBe(true);
+    expect(report.recommendations.some(r => r.includes("MongoDB"))).toBe(true);
+  });
+
+  it("detects DOWN cassandra", () => {
+    const json = JSON.stringify({
+      status: "DOWN",
+      components: {
+        cassandra: { status: "DOWN", details: { error: "All host(s) tried for query failed" } },
+      },
+    });
+    const report = parseHealth(json);
+    expect(report.issues.some(i => i.component === "cassandra")).toBe(true);
+    expect(report.recommendations.some(r => r.includes("Cassandra"))).toBe(true);
+  });
+
   it("warns on low disk space even if UP", () => {
     const json = JSON.stringify({
       status: "UP",
@@ -153,6 +177,27 @@ describe("analyzeMetrics", () => {
     });
     const report = analyzeMetrics(json);
     expect(report.issues.some(i => i.category === "db.pool" && i.severity === "CRITICAL")).toBe(true);
+  });
+
+  it("detects HikariCP connection acquisition timeouts", () => {
+    const json = JSON.stringify({
+      "hikaricp.connections.active": 5,
+      "hikaricp.connections.max": 10,
+      "hikaricp.connections.timeout": 7,
+    });
+    const report = analyzeMetrics(json);
+    expect(report.issues.some(i => i.category === "db.pool" && i.message.includes("timeout"))).toBe(true);
+    expect(report.recommendations.some(r => r.includes("starvation"))).toBe(true);
+  });
+
+  it("does not warn on zero HikariCP timeouts", () => {
+    const json = JSON.stringify({
+      "hikaricp.connections.active": 3,
+      "hikaricp.connections.max": 10,
+      "hikaricp.connections.timeout": 0,
+    });
+    const report = analyzeMetrics(json);
+    expect(report.issues.some(i => i.message.includes("timeout"))).toBe(false);
   });
 
   it("detects slow GC pauses (avg > 200ms)", () => {
@@ -375,6 +420,38 @@ describe("analyzeBeans", () => {
     });
     const report = analyzeBeans(json);
     expect(report.issues.some(i => i.message.includes("Singleton") && i.message.includes("prototype"))).toBe(true);
+  });
+
+  it("detects request-scoped bean injected into singleton", () => {
+    const json = JSON.stringify({
+      contexts: {
+        application: {
+          beans: {
+            singletonController: { scope: "singleton", type: "com.example.Controller", dependencies: ["currentUser"] },
+            currentUser: { scope: "request", type: "com.example.CurrentUser", dependencies: [] },
+          },
+        },
+      },
+    });
+    const report = analyzeBeans(json);
+    expect(report.issues.some(i => i.message.includes("request-scoped") || i.message.includes("request"))).toBe(true);
+    expect(report.recommendations.some(r => r.includes("proxyMode") || r.includes("ScopedProxyMode"))).toBe(true);
+  });
+
+  it("detects session-scoped bean injected into singleton", () => {
+    const json = JSON.stringify({
+      contexts: {
+        application: {
+          beans: {
+            cartService: { scope: "singleton", type: "com.example.CartService", dependencies: ["shoppingCart"] },
+            shoppingCart: { scope: "session", type: "com.example.ShoppingCart", dependencies: [] },
+          },
+        },
+      },
+    });
+    const report = analyzeBeans(json);
+    expect(report.issues.some(i => i.message.includes("session"))).toBe(true);
+    expect(report.recommendations.some(r => r.includes("shoppingCart"))).toBe(true);
   });
 
   it("flags high dependency count", () => {

@@ -160,6 +160,14 @@ function analyzeComponent(comp: HealthComponent, issues: HealthIssue[], recommen
       recommendations.push(
         "Elasticsearch health check failed. Verify cluster is reachable and spring.elasticsearch.uris is correct."
       );
+    } else if (comp.name === "mongo" || comp.name === "mongodb") {
+      recommendations.push(
+        "MongoDB health check failed. Verify MongoDB server is reachable and spring.data.mongodb.uri is correct."
+      );
+    } else if (comp.name === "cassandra") {
+      recommendations.push(
+        "Cassandra health check failed. Verify Cassandra contact points and spring.cassandra.contact-points are correct."
+      );
     } else if (comp.name === "diskSpace") {
       const threshold = comp.details.threshold as number | undefined;
       const free = comp.details.free as number | undefined;
