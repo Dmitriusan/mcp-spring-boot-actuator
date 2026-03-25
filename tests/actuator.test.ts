@@ -727,3 +727,40 @@ describe("full actuator analysis", () => {
     expect(beans.issues.some(i => i.message.includes("Circular"))).toBe(true);
   });
 });
+
+describe("analyzeMetrics — TOTAL_TIME statistic", () => {
+  it("handles TOTAL_TIME statistic for GC pause metrics", () => {
+    // Spring Boot /metrics/jvm.gc.pause uses TOTAL_TIME statistic, not VALUE
+    const json = JSON.stringify({
+      "jvm.memory.used": 400000000,
+      "jvm.memory.max": 1000000000,
+      "jvm.gc.pause.count": {
+        measurements: [{ statistic: "COUNT", value: 30 }],
+      },
+      "jvm.gc.pause.total": {
+        measurements: [{ statistic: "TOTAL_TIME", value: 9 }],
+      },
+    });
+    const report = analyzeMetrics(json);
+    expect(report.jvm).not.toBeNull();
+    // avg pause = (9/30)*1000 = 300ms — should trigger GC warning
+    expect(report.issues.some(i => i.category === "jvm.gc" && i.severity === "WARNING")).toBe(true);
+    expect(report.recommendations.some(r => r.includes("ZGC") || r.includes("G1"))).toBe(true);
+  });
+
+  it("TOTAL_TIME statistic ignored when gc.pause.total > 5 but count is 0", () => {
+    // GC issue only fires when both total > 5 AND count > 0
+    const json = JSON.stringify({
+      "jvm.memory.used": 300000000,
+      "jvm.memory.max": 1000000000,
+      "jvm.gc.pause.count": {
+        measurements: [{ statistic: "COUNT", value: 0 }],
+      },
+      "jvm.gc.pause.total": {
+        measurements: [{ statistic: "TOTAL_TIME", value: 10 }],
+      },
+    });
+    const report = analyzeMetrics(json);
+    expect(report.issues.some(i => i.category === "jvm.gc")).toBe(false);
+  });
+});
