@@ -65,6 +65,11 @@ const PRODUCTION_CHECKS: Array<{ property: string; badValues: string[]; message:
     badValues: ["true"],
     message: "DevTools restart is enabled. This should not be active in production.",
   },
+  {
+    property: "spring.sql.init.mode",
+    badValues: ["always"],
+    message: "SQL initialisation mode is 'always' — schema.sql and data.sql run on every startup, risking data loss in production.",
+  },
 ];
 
 /**
