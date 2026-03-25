@@ -764,3 +764,38 @@ describe("analyzeMetrics — TOTAL_TIME statistic", () => {
     expect(report.issues.some(i => i.category === "jvm.gc")).toBe(false);
   });
 });
+
+describe("analyzeEnv — sql.init.mode check", () => {
+  it("flags spring.sql.init.mode=always", () => {
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "applicationConfig",
+          properties: {
+            "spring.sql.init.mode": { value: "always" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.some(r => r.property === "spring.sql.init.mode")).toBe(true);
+    expect(report.risks.some(r => r.message.includes("every startup"))).toBe(true);
+  });
+
+  it("does not flag spring.sql.init.mode=never", () => {
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "applicationConfig",
+          properties: {
+            "spring.sql.init.mode": { value: "never" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.some(r => r.property === "spring.sql.init.mode")).toBe(false);
+  });
+});
