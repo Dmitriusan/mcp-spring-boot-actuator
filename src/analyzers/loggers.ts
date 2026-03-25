@@ -92,14 +92,14 @@ export function analyzeLoggers(json: string): LoggerReport {
   );
 
   if (verboseLoggers.length > 0) {
-    const topPackages = verboseLoggers
-      .filter((l) => l.name !== "ROOT")
-      .slice(0, 10);
+    const nonRootVerbose = verboseLoggers.filter((l) => l.name !== "ROOT");
 
-    if (topPackages.length > 0) {
+    if (nonRootVerbose.length > 0) {
+      const listed = nonRootVerbose.slice(0, 10);
+      const andMore = nonRootVerbose.length > 10 ? ` (+${nonRootVerbose.length - 10} more)` : "";
       issues.push({
         severity: "WARNING",
-        message: `${topPackages.length} logger(s) explicitly set to DEBUG/TRACE: ${topPackages.map((l) => l.name).join(", ")}`,
+        message: `${nonRootVerbose.length} logger(s) explicitly set to DEBUG/TRACE: ${listed.map((l) => l.name).join(", ")}${andMore}`,
       });
       recommendations.push(
         "Review DEBUG/TRACE loggers — verbose logging in production causes I/O overhead and may expose sensitive data.",
