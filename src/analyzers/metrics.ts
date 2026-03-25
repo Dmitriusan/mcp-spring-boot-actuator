@@ -92,7 +92,10 @@ function getMetric(metrics: Record<string, unknown>, name: string): number | nul
     // Spring Boot format: { measurements: [{ statistic: "VALUE", value: N }] }
     if (Array.isArray(m.measurements)) {
       const valMeasure = m.measurements.find(
-        (x: unknown) => (x as Record<string, unknown>).statistic === "VALUE" || (x as Record<string, unknown>).statistic === "COUNT"
+        (x: unknown) => {
+          const stat = (x as Record<string, unknown>).statistic;
+          return stat === "VALUE" || stat === "COUNT" || stat === "TOTAL_TIME";
+        }
       );
       if (valMeasure && typeof (valMeasure as Record<string, unknown>).value === "number") {
         return (valMeasure as Record<string, unknown>).value as number;
