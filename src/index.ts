@@ -114,7 +114,7 @@ server.tool(
   "analyze_metrics",
   "Analyze Spring Boot Actuator metrics data. Detects JVM memory pressure, high error rates, connection pool exhaustion, and GC issues.",
   {
-    json: z.string().describe("JSON object with metric names as keys and values (e.g., from /metrics endpoints)"),
+    json: z.string().describe("Flat JSON map of metric name to value, assembled from individual Spring Boot /actuator/metrics/{name} calls. Each entry may be a plain number or a Spring Boot measurement object with a 'measurements' array. Key metrics to include: jvm.memory.used, jvm.memory.max, jvm.threads.live, jvm.threads.peak, jvm.gc.pause.count, jvm.gc.pause.total, http.server.requests.count, http.server.requests.max, http.server.requests.error.count, hikaricp.connections.active, hikaricp.connections.max, hikaricp.connections.pending, hikaricp.connections.timeout. Example entry: {\"jvm.memory.used\": 524288000}"),
   },
   async ({ json }) => {
     try {
