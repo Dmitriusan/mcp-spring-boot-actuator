@@ -70,6 +70,11 @@ const PRODUCTION_CHECKS: Array<{ property: string; badValues: string[]; message:
     badValues: ["always"],
     message: "SQL initialisation mode is 'always' — schema.sql and data.sql run on every startup, risking data loss in production.",
   },
+  {
+    property: "spring.jpa.open-in-view",
+    badValues: ["true"],
+    message: "Open-in-view is enabled. This keeps a database connection open for the entire HTTP request lifecycle, causing N+1 query patterns and connection pool pressure under load.",
+  },
 ];
 
 /**

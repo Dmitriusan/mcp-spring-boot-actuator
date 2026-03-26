@@ -823,3 +823,38 @@ describe("analyzeEnv — sql.init.mode check", () => {
     expect(report.risks.some(r => r.property === "spring.sql.init.mode")).toBe(false);
   });
 });
+
+describe("analyzeEnv — open-in-view check", () => {
+  it("flags spring.jpa.open-in-view=true", () => {
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "applicationConfig",
+          properties: {
+            "spring.jpa.open-in-view": { value: "true" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.some(r => r.property === "spring.jpa.open-in-view")).toBe(true);
+    expect(report.risks.some(r => r.message.includes("N+1"))).toBe(true);
+  });
+
+  it("does not flag spring.jpa.open-in-view=false", () => {
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "applicationConfig",
+          properties: {
+            "spring.jpa.open-in-view": { value: "false" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.some(r => r.property === "spring.jpa.open-in-view")).toBe(false);
+  });
+});
