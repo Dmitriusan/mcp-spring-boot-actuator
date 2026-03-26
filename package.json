@@ -1,6 +1,6 @@
 {
   "name": "mcp-spring-boot-actuator",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "MCP server for Spring Boot Actuator analysis — health, metrics, environment, and bean diagnostics",
   "mcpName": "io.github.dmitriusan/mcp-spring-boot-actuator",
   "main": "build/index.js",
