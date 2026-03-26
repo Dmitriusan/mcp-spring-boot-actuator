@@ -171,7 +171,7 @@ function analyzeComponent(comp: HealthComponent, issues: HealthIssue[], recommen
     } else if (comp.name === "diskSpace") {
       const threshold = comp.details.threshold as number | undefined;
       const free = comp.details.free as number | undefined;
-      if (threshold && free) {
+      if (threshold !== undefined && free !== undefined) {
         recommendations.push(
           `Disk space below threshold. Free: ${formatBytes(free)}, Threshold: ${formatBytes(threshold)}. Free up disk space or increase the threshold.`
         );
@@ -195,7 +195,7 @@ function analyzeComponent(comp: HealthComponent, issues: HealthIssue[], recommen
   if (comp.name === "diskSpace" && comp.status === "UP") {
     const free = comp.details.free as number | undefined;
     const total = comp.details.total as number | undefined;
-    if (free && total && free / total < 0.15) {
+    if (free !== undefined && total !== undefined && total > 0 && free / total < 0.15) {
       issues.push({
         severity: "WARNING",
         component: "diskSpace",

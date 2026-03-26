@@ -82,6 +82,30 @@ describe("parseHealth", () => {
     expect(report.issues.some(i => i.severity === "WARNING" && i.component === "diskSpace")).toBe(true);
   });
 
+  it("produces specific recommendation when disk is DOWN with free=0", () => {
+    const json = JSON.stringify({
+      status: "DOWN",
+      components: {
+        diskSpace: { status: "DOWN", details: { free: 0, threshold: 10485760 } },
+      },
+    });
+    const report = parseHealth(json);
+    // Should produce specific "Free: 0 B, Threshold: 10.0 MB" message, not the generic fallback
+    expect(report.recommendations.some(r => r.includes("Free:") && r.includes("Threshold:"))).toBe(true);
+  });
+
+  it("does not warn on disk space when total is 0 (avoids NaN/division-by-zero)", () => {
+    const json = JSON.stringify({
+      status: "UP",
+      components: {
+        diskSpace: { status: "UP", details: { total: 0, free: 0 } },
+      },
+    });
+    const report = parseHealth(json);
+    // total=0 should not produce a warning (avoids division by zero)
+    expect(report.issues.filter(i => i.component === "diskSpace" && i.severity === "WARNING")).toHaveLength(0);
+  });
+
   it("handles no components (restricted health endpoint)", () => {
     const json = JSON.stringify({ status: "UP" });
     const report = parseHealth(json);
