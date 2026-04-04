@@ -156,10 +156,15 @@ function detectCircularDependencies(beans: BeanInfo[], issues: BeanIssue[]): voi
     }
   }
 
-  // Deduplicate cycles
+  // Deduplicate cycles using canonical rotation: rotate each cycle to start
+  // from its lexicographically smallest node, preserving direction. This
+  // correctly identifies [A,B,C] and [C,A,B] as the same cycle while keeping
+  // [A,B,C] and [A,C,B] distinct (they traverse the same nodes in different
+  // directions and are genuinely separate circular dependency chains).
   const seen = new Set<string>();
   for (const cycle of cycles) {
-    const key = [...cycle].sort().join(",");
+    const minIdx = cycle.indexOf(cycle.reduce((min, s) => (s < min ? s : min)));
+    const key = [...cycle.slice(minIdx), ...cycle.slice(0, minIdx)].join(",");
     if (seen.has(key)) continue;
     seen.add(key);
 
