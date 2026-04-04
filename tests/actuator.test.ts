@@ -540,6 +540,46 @@ describe("analyzeBeans", () => {
     expect(report.contexts).toContain("application");
     expect(report.contexts).toContain("child");
   });
+
+  it("detects three-node circular dependency chain", () => {
+    // A → B → C → A
+    const json = JSON.stringify({
+      contexts: {
+        application: {
+          beans: {
+            serviceA: { scope: "singleton", type: "com.example.ServiceA", dependencies: ["serviceB"] },
+            serviceB: { scope: "singleton", type: "com.example.ServiceB", dependencies: ["serviceC"] },
+            serviceC: { scope: "singleton", type: "com.example.ServiceC", dependencies: ["serviceA"] },
+          },
+        },
+      },
+    });
+    const report = analyzeBeans(json);
+    expect(report.issues.some(i => i.message.includes("Circular dependency"))).toBe(true);
+    const cycleIssues = report.issues.filter(i => i.message.includes("Circular dependency"));
+    // All three beans must appear in the reported cycle
+    const involvedBeans = cycleIssues.flatMap(i => i.beans);
+    expect(involvedBeans).toContain("serviceA");
+    expect(involvedBeans).toContain("serviceB");
+    expect(involvedBeans).toContain("serviceC");
+  });
+
+  it("does not duplicate the same cycle detected from different starting nodes", () => {
+    // A → B → A is the same cycle regardless of which node the DFS starts from
+    const json = JSON.stringify({
+      contexts: {
+        application: {
+          beans: {
+            alpha: { scope: "singleton", type: "com.example.Alpha", dependencies: ["beta"] },
+            beta: { scope: "singleton", type: "com.example.Beta", dependencies: ["alpha"] },
+          },
+        },
+      },
+    });
+    const report = analyzeBeans(json);
+    const cycleIssues = report.issues.filter(i => i.message.includes("Circular dependency"));
+    expect(cycleIssues).toHaveLength(1);
+  });
 });
 
 // --- Edge Case Tests ---
