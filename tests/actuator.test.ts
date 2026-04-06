@@ -410,6 +410,60 @@ describe("analyzeEnv", () => {
     const report = analyzeEnv(json);
     expect(report.risks.some(r => r.severity === "CRITICAL" && r.property.includes("client-secret"))).toBe(true);
   });
+
+  it("does not flag complete Spring EL placeholder as a secret", () => {
+    // ${DB_PASSWORD} is a Spring EL reference — the actual value is resolved at runtime
+    // from an environment variable or config server. Actuator sometimes shows the raw
+    // placeholder before resolution. This must not trigger a false CRITICAL.
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "applicationConfig",
+          properties: {
+            "spring.datasource.password": { value: "${DB_PASSWORD}" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.filter(r => r.severity === "CRITICAL" && r.property.includes("password"))).toHaveLength(0);
+  });
+
+  it("does not flag Spring EL placeholder with default value as a secret", () => {
+    // ${DB_PASSWORD:changeit} is a complete Spring EL expression — skip it.
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "applicationConfig",
+          properties: {
+            "spring.datasource.password": { value: "${DB_PASSWORD:changeit}" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.filter(r => r.severity === "CRITICAL" && r.property.includes("password"))).toHaveLength(0);
+  });
+
+  it("flags partial placeholder with trailing content as a secret", () => {
+    // "${VAR}extratext" starts with ${ but is not a pure reference — the trailing content
+    // may be literal credential material. This should still trigger CRITICAL.
+    const json = JSON.stringify({
+      activeProfiles: ["prod"],
+      propertySources: [
+        {
+          name: "applicationConfig",
+          properties: {
+            "spring.datasource.password": { value: "${DB_PASSWORD}extra" },
+          },
+        },
+      ],
+    });
+    const report = analyzeEnv(json);
+    expect(report.risks.some(r => r.severity === "CRITICAL" && r.property.includes("password"))).toBe(true);
+  });
 });
 
 // --- Beans Analyzer Tests ---

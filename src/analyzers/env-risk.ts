@@ -184,8 +184,13 @@ function checkForSecrets(propName: string, value: string, risks: EnvRisk[]): voi
   const isSecretProperty = SECRET_PATTERNS.some(pattern => pattern.test(propName));
   if (!isSecretProperty) return;
 
-  // Check if the value looks like a real secret (not a placeholder or empty)
-  if (value.length > 5 && value !== "null" && value !== "undefined" && !value.startsWith("${")) {
+  // Check if the value looks like a real secret (not a placeholder or empty).
+  // Match the full string against ${...} to skip only complete Spring EL placeholder
+  // references (e.g. "${DB_PASSWORD}" or "${DB_PASSWORD:default}"). A value that merely
+  // starts with "${" but has trailing content (e.g. "${VAR}extratext") is not a pure
+  // reference and may contain real credential material — report it.
+  const isPlaceholder = /^\$\{[^}]+\}$/.test(value);
+  if (value.length > 5 && value !== "null" && value !== "undefined" && !isPlaceholder) {
     risks.push({
       severity: "CRITICAL",
       property: propName,
