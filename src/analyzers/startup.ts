@@ -125,16 +125,23 @@ export function analyzeStartup(json: string): StartupReport {
   const slowBeans = steps.filter(s =>
     s.durationMs > 2000 && (s.name.includes("instantiate") || s.name.includes("init") || s.tags.beanName)
   );
-  for (const bean of slowBeans.slice(0, 5)) {
+  const displayLimit = 5;
+  for (const bean of slowBeans.slice(0, displayLimit)) {
     const beanName = bean.tags.beanName || bean.name;
     issues.push({
       severity: "WARNING",
       message: `Bean "${beanName}" took ${(bean.durationMs / 1000).toFixed(1)}s to initialize.`,
     });
   }
+  if (slowBeans.length > displayLimit) {
+    issues.push({
+      severity: "INFO",
+      message: `${slowBeans.length - displayLimit} additional slow bean(s) not shown. ${slowBeans.length} total beans exceeded the 2s threshold.`,
+    });
+  }
 
   if (slowBeans.length > 3) {
-    recommendations.push("Consider making slow beans @Lazy or deferring initialization to first use.");
+    recommendations.push(`Consider making these ${slowBeans.length} slow bean(s) @Lazy or deferring initialization to first use.`);
   }
 
   if (issues.length === 0) {

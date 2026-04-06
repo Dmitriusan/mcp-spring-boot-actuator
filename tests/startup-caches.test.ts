@@ -125,6 +125,33 @@ describe("analyzeStartup", () => {
     expect(report.totalDurationMs).toBe(5000);
     expect(report.steps[0].durationMs).toBe(1500);
   });
+
+  it("reports truncation info when more than 5 beans are slow", () => {
+    // 7 slow beans: only 5 should produce WARNING issues; an INFO issue must note the rest
+    const events = Array.from({ length: 7 }, (_, i) => ({
+      duration: "PT3S",
+      startupStep: {
+        name: "spring.beans.instantiate",
+        id: i + 1,
+        parentId: null,
+        tags: [{ key: "beanName", value: `slowBean${i + 1}` }],
+      },
+    }));
+    const json = JSON.stringify({
+      timeline: {
+        startupTime: { totalTime: "PT60S" },
+        events,
+      },
+    });
+    const report = analyzeStartup(json);
+    const warnings = report.issues.filter(i => i.severity === "WARNING" && i.message.includes("took"));
+    expect(warnings).toHaveLength(5);
+    const truncationInfo = report.issues.find(i => i.severity === "INFO" && i.message.includes("not shown"));
+    expect(truncationInfo).toBeDefined();
+    expect(truncationInfo!.message).toContain("2 additional");
+    expect(truncationInfo!.message).toContain("7 total");
+    expect(report.recommendations.some(r => r.includes("7 slow bean"))).toBe(true);
+  });
 });
 
 // --- Cache Analyzer Tests ---
