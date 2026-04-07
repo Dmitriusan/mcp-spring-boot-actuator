@@ -636,6 +636,46 @@ describe("analyzeBeans", () => {
   });
 });
 
+// --- Health DOWN component tests (mail, elasticsearch, rabbit) ---
+
+describe("parseHealth — additional DOWN components", () => {
+  it("detects DOWN mail server", () => {
+    const json = JSON.stringify({
+      status: "DOWN",
+      components: {
+        mail: { status: "DOWN", details: { error: "Connection timed out: mail.example.com/25" } },
+      },
+    });
+    const report = parseHealth(json);
+    expect(report.issues.some(i => i.severity === "CRITICAL" && i.component === "mail")).toBe(true);
+    expect(report.recommendations.some(r => r.includes("SMTP") || r.includes("spring.mail"))).toBe(true);
+  });
+
+  it("detects DOWN elasticsearch cluster", () => {
+    const json = JSON.stringify({
+      status: "DOWN",
+      components: {
+        elasticsearch: { status: "DOWN", details: { error: "Connection refused: localhost/9200" } },
+      },
+    });
+    const report = parseHealth(json);
+    expect(report.issues.some(i => i.severity === "CRITICAL" && i.component === "elasticsearch")).toBe(true);
+    expect(report.recommendations.some(r => r.includes("Elasticsearch") || r.includes("spring.elasticsearch"))).toBe(true);
+  });
+
+  it("detects DOWN RabbitMQ broker", () => {
+    const json = JSON.stringify({
+      status: "DOWN",
+      components: {
+        rabbit: { status: "DOWN", details: { error: "Connection refused: localhost/5672" } },
+      },
+    });
+    const report = parseHealth(json);
+    expect(report.issues.some(i => i.severity === "CRITICAL" && i.component === "rabbit")).toBe(true);
+    expect(report.recommendations.some(r => r.includes("RabbitMQ") || r.includes("spring.rabbitmq"))).toBe(true);
+  });
+});
+
 // --- Edge Case Tests ---
 
 describe("parseHealth — edge cases", () => {
@@ -708,6 +748,31 @@ describe("analyzeMetrics — edge cases", () => {
     const report = analyzeMetrics(json);
     // Should not produce a pending connections warning when key is absent
     expect(report.issues.some(i => i.message.includes("waiting for a database connection"))).toBe(false);
+  });
+
+  it("detects JDBC connection pool exhaustion using jdbc.connections.* fallback names", () => {
+    // Non-HikariCP setups (e.g. Tomcat JDBC pool) report under jdbc.connections.* names
+    const json = JSON.stringify({
+      "jdbc.connections.active": 9,
+      "jdbc.connections.max": 10,
+    });
+    const report = analyzeMetrics(json);
+    expect(report.issues.some(i => i.category === "db.pool" && i.severity === "CRITICAL")).toBe(true);
+    expect(report.recommendations.some(r => r.includes("pool-size") || r.includes("pool size") || r.includes("maximum-pool-size"))).toBe(true);
+  });
+
+  it("does not raise a heap CRITICAL when jvm.memory.max is absent from payload", () => {
+    // Some metric scrapers include jvm.memory.used without jvm.memory.max.
+    // The previous fallback was ?? 1 (one byte), making utilization = ~used_bytes
+    // and triggering a bogus CRITICAL. The correct fallback is 0 so the guard
+    // sets utilization to 0 and no alert fires.
+    const json = JSON.stringify({
+      "jvm.memory.used": 900000000,
+    });
+    const report = analyzeMetrics(json);
+    expect(report.jvm).not.toBeNull();
+    expect(report.issues.filter(i => i.category === "jvm.memory" && i.severity === "CRITICAL")).toHaveLength(0);
+    expect(report.issues.every(i => !i.message.includes("90000000000"))).toBe(true);
   });
 
   it("warns when HikariCP connections.pending is non-zero", () => {
