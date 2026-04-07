@@ -116,7 +116,10 @@ function extractJvmMetrics(
   if (heapUsed === null && heapMax === null) return null;
 
   const used = heapUsed ?? 0;
-  const max = heapMax ?? 1;
+  // Use 0 (not 1) when heapMax is absent — the existing `max > 0` guard below will
+  // then produce utilization=0, avoiding a spurious CRITICAL when only one of the
+  // two heap metrics is present in the payload.
+  const max = heapMax ?? 0;
   const utilization = max > 0 ? used / max : 0;
 
   const jvm: JvmMetrics = {
